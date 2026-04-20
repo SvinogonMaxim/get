@@ -1,43 +1,39 @@
 import RPi.GPIO as GPIO
 
 
-class R2R_DAC:
-    def __init__(self, pins, vmax, verbose=False):
-        self.pins = pins
+class PWM_DAC:
+    def __init__(self, pin, freq, vmax, verbose=False):
+        self.pin = pin
+        self.freq = freq
         self.vmax = vmax
         self.verbose = verbose
 
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(self.pins, GPIO.OUT, initial=0)
+        GPIO.setup(self.pin, GPIO.OUT, initial=0)
+
+        self.pwm = GPIO.PWM(self.pin, self.freq)
+        self.pwm.start(0)
 
     def deinit(self):
-        GPIO.output(self.pins, 0)
+        self.pwm.ChangeDutyCycle(0)
+        self.pwm.stop()
         GPIO.cleanup()
-
-    def set_number(self, n):
-        if not (0 <= n <= 255):
-            print("Число выходит за диапазон ЦАП (0 - 255)")
-            GPIO.output(self.pins, 0)
-            return
-
-        code = [int(x) for x in bin(n)[2:].zfill(8)]
-        GPIO.output(self.pins, code)
-
-        if self.verbose:
-            print(f"Число на вход ЦАП: {n}, биты: {code}\n")
 
     def set_voltage(self, v):
         if not (0.0 <= v <= self.vmax):
             print(f"Напряжение выходит за динамический диапазон ЦАП (0.00 - {self.vmax:.2f} В)")
-            GPIO.output(self.pins, 0)
+            self.pwm.ChangeDutyCycle(0)
             return
 
-        n = int(v / self.vmax * 255)
-        self.set_number(n)
+        duty = v / self.vmax * 100
+        self.pwm.ChangeDutyCycle(duty)
+
+        if self.verbose:
+            print(f"Коэффициент заполнения: {duty:.2f}\n")
 
 
 if __name__ == "__main__":
-    dac = R2R_DAC([16, 20, 21, 25, 26, 17, 27, 22], 3.183, True)
+    dac = PWM_DAC(12, 500, 3.290, True)
 
     try:
         while True:
@@ -47,6 +43,9 @@ if __name__ == "__main__":
 
             except ValueError:
                 print("Вы ввели не число. Попробуйте ещё раз\n")
+
+    except KeyboardInterrupt:
+        pass
 
     finally:
         dac.deinit()
