@@ -1,16 +1,29 @@
-import matplotlib.pyplot as plt
+import time
+import r2r_adc as adc
+import adc_plot as ap
 
 
-def plot_voltage_vs_time(t, v, mx):
-    plt.figure(figsize=(10, 6))
-    plt.plot(t, v)
+mx = 3.18
+dt = 0.0001
+tm = 3.0
 
-    plt.title("График зависимости напряжения на входе АЦП от времени")
-    plt.xlabel("Время, с")
-    plt.ylabel("Напряжение, В")
+vls = []
+tls = []
 
-    plt.xlim(0, max(t))
-    plt.ylim(0, mx)
 
-    plt.grid(True)
-    plt.show()
+a = adc.R2R_ADC(mx, dt, False)
+
+try:
+    t0 = time.time()
+
+    while time.time() - t0 < tm:
+        v = a.get_sc_voltage()
+        t = time.time() - t0
+
+        vls.append(v)
+        tls.append(t)
+
+    ap.plot_voltage_vs_time(tls, vls, mx)
+
+finally:
+    a.deinit()
