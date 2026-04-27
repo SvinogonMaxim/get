@@ -22,6 +22,7 @@ try:
         tls.append(t)
 
     ap.plot_voltage_vs_time(tls, vls, mx)
+    ap.plot_sampling_period_hist(tls)
 finally: 
     a.deinit()
 
