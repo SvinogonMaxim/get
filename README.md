@@ -1,14 +1,16 @@
-import RPi.GPIO as GPIO
-import time
+import matplotlib.pyplot as plt
 
-p = [26, 20, 19, 16, 13, 12, 25, 11]
 
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(p, GPIO.OUT, initial=0)
+def plot_voltage_vs_time(t, v, mx):
+    plt.figure(figsize=(10, 6))
+    plt.plot(t, v)
 
-try:
-    GPIO.output(p, [1, 1, 1, 1, 1, 1, 1, 1])
-    time.sleep(30)
-finally:
-    GPIO.output(p, 0)
-    GPIO.cleanup()
+    plt.title("График зависимости напряжения на входе АЦП от времени")
+    plt.xlabel("Время, с")
+    plt.ylabel("Напряжение, В")
+
+    plt.xlim(0, max(t))
+    plt.ylim(0, mx)
+
+    plt.grid(True)
+    plt.show()
