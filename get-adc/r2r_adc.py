@@ -1,11 +1,11 @@
-import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO 
 import time
 
 class R2R_ADC: 
-    def __init__(self, dynamic_range, compare_time=0.01, verbose=False): 
-        self.dynamic_range = dynamic_range 
-        self.verbose = verbose 
-        self.compare_time = compare_time
+    def __init__(self, mx, dt=0.01, vb=False): 
+        self.mx = mx 
+        self.vb = vb 
+        self.dt = dt
 
         self.bits_gpio = [26, 20, 19, 16, 13, 12, 25, 11]
         self.comp_gpio = 21
@@ -18,36 +18,59 @@ class R2R_ADC:
         GPIO.output(self.bits_gpio, 0)
         GPIO.cleanup()
 
-    def number_to_dac(self, number):
-        bits = [int(x) for x in bin(number)[2:].zfill(8)]
-        GPIO.output(self.bits_gpio, bits)
+    def number_to_dac(self, n):
+        b = [int(x) for x in bin(n)[2:].zfill(8)]
+        GPIO.output(self.bits_gpio, b)
 
     def sequential_counting_adc(self):
         for n in range(256):
             self.number_to_dac(n)
-            time.sleep(self.compare_time)
+            time.sleep(self.dt)
 
-            comp = GPIO.input(self.comp_gpio)
+            c = GPIO.input(self.comp_gpio)
 
-            if self.verbose:
-                print(f"n = {n}, comp = {comp}")
+            if self.vb:
+                print(f"n = {n}, c = {c}")
 
-            if comp == 1:
+            if c == 1:
                 return n
 
         return 255
 
     def get_sc_voltage(self):
         n = self.sequential_counting_adc()
-        v = n / 255 * self.dynamic_range
+        v = n / 255 * self.mx
+        return v
+
+    def successive_approximation_adc(self):
+        n = 0
+
+        for bit in [128, 64, 32, 16, 8, 4, 2, 1]:
+            x = n + bit
+            self.number_to_dac(x)
+            time.sleep(self.dt)
+
+            c = GPIO.input(self.comp_gpio)
+
+            if self.vb:
+                print(f"bit = {bit}, x = {x}, c = {c}")
+
+            if c == 0:
+                n = x
+
+        return n
+
+    def get_sar_voltage(self):
+        n = self.successive_approximation_adc()
+        v = n / 255 * self.mx
         return v
 if __name__ == "__main__": 
-    adc = R2R_ADC(3.21, 0.01, False)
+    a = R2R_ADC(3.213, 0.0001, False)
 
     try:
         while True:
-            v = adc.get_sc_voltage()
+            v = a.get_sar_voltage()
             print(f"Напряжение: {v:.3f} В")
 
     finally:
-        adc.deinit()
+        a.deinit()
