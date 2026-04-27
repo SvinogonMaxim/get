@@ -1,10 +1,14 @@
-import r2r_dac as r2r
+import RPi.GPIO as GPIO
 import time
 
-d = r2r.R2R_DAC([16, 20, 21, 25, 26, 17, 27, 22], 3.3, False)
+p = [26, 20, 19, 16, 13, 12, 25, 11]
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(p, GPIO.OUT, initial=0)
 
 try:
-    d.set_number(255)
+    GPIO.output(p, [1, 1, 1, 1, 1, 1, 1, 1])
     time.sleep(30)
 finally:
-    d.deinit()
+    GPIO.output(p, 0)
+    GPIO.cleanup()
