@@ -1,56 +1,10 @@
-import RPi.GPIO as GPIO
+import r2r_dac as r2r
 import time
 
+d = r2r.R2R_DAC([16, 20, 21, 25, 26, 17, 27, 22], 3.3, False)
 
-class R2R_ADC:
-    def __init__(self, dynamic_range, compare_time=0.01, verbose=False):
-        self.dynamic_range = dynamic_range
-        self.verbose = verbose
-        self.compare_time = compare_time
-
-        self.bits_gpio = [26, 20, 19, 16, 13, 12, 25, 11]
-        self.comp_gpio = 21
-
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(self.bits_gpio, GPIO.OUT, initial=0)
-        GPIO.setup(self.comp_gpio, GPIO.IN)
-
-    def deinit(self):
-        GPIO.output(self.bits_gpio, 0)
-        GPIO.cleanup()
-
-    def number_to_dac(self, number):
-        bits = [int(x) for x in bin(number)[2:].zfill(8)]
-        GPIO.output(self.bits_gpio, bits)
-
-    def sequential_counting_adc(self):
-        for n in range(256):
-            self.number_to_dac(n)
-            time.sleep(self.compare_time)
-
-            comp = GPIO.input(self.comp_gpio)
-
-            if self.verbose:
-                print(f"n = {n}, comp = {comp}")
-
-            if comp == 0:
-                return n
-
-        return 255
-
-    def get_sc_voltage(self):
-        n = self.sequential_counting_adc()
-        v = n / 255 * self.dynamic_range
-        return v
-
-
-if __name__ == "__main__":
-    adc = R2R_ADC(3.18, 0.01, False)
-
-    try:
-        while True:
-            v = adc.get_sc_voltage()
-            print(f"Напряжение: {v:.3f} В")
-
-    finally:
-        adc.deinit()
+try:
+    d.set_number(255)
+    time.sleep(30)
+finally:
+    d.deinit()
