@@ -22,6 +22,7 @@ try:
         ts.append(t)
 
     ap.plot_voltage_vs_time(ts, vs, mx)
+    ap.plot_sampling_period_hist(ts)
 finally: 
     a.deinit()
 
